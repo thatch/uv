@@ -231,14 +231,10 @@ fn system_config_file() -> Option<PathBuf> {
         {
             return Some(path);
         }
-        // Fallback to /etc/xdg/uv/uv.toml then /etc/uv/uv.toml if XDG_CONFIG_DIRS is not set or no
-        // valid path is found
-        for candidate in ["/etc/xdg/uv/uv.toml", "/etc/uv/uv.toml"] {
-            if Path::new(candidate).is_file() {
-                return Some(PathBuf::from(candidate));
-            }
-        }
-        None
+        // Fallback /etc/uv/uv.toml if XDG_CONFIG_DIRS is not set or no valid
+        // path is found
+        let candidate = Path::new("/etc/uv/uv.toml");
+        candidate.is_file().then(|| candidate.to_path_buf())
     }
 }
 
