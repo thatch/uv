@@ -295,6 +295,9 @@ impl EnvVars {
     /// Used to look for Microsoft Store Pythons installations.
     pub const LOCALAPPDATA: &'static str = "LOCALAPPDATA";
 
+    /// The standard %SYSTEMDRIVE% var for Windows.
+    pub const SYSTEMDRIVE: &'static str = "SYSTEMDRIVE";
+
     /// Path to the `.git` directory. Ignored by `uv` when performing fetch.
     pub const GIT_DIR: &'static str = "GIT_DIR";
 

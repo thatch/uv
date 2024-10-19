@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 use tracing::debug;
 
 use uv_fs::Simplified;
-#[cfg(not(windows))]
 use uv_static::EnvVars;
 use uv_warnings::warn_user;
 
@@ -216,12 +215,16 @@ fn locate_system_config_xdg(value: Option<&str>) -> Option<PathBuf> {
 ///
 /// Unix-like systems: This uses the `XDG_CONFIG_DIRS` environment variable in *nix systems.
 /// If the var is not present it will check /etc/xdg/uv/uv.toml and then /etc/uv/uv.toml.
-/// Windows: "C:\ProgramData\uv\uv.toml" is used.
+/// Windows: "%SYSTEMDRIVE%\ProgramData\uv\uv.toml" is used.
 fn system_config_file() -> Option<PathBuf> {
     // On Windows, use, e.g., C:\ProgramData
     #[cfg(windows)]
     {
-        return Some(PathBuf::from("C:\\ProgramData\\uv\\uv.toml"));
+        if let Ok(system_drive) = std::env::var(EnvVars::SYSTEMDRIVE) {
+            let candidate = PathBuf::from(system_drive).join("ProgramData\\uv\\uv.toml");
+            return candidate.as_path().is_file().then(|| candidate);
+        }
+        None
     }
 
     #[cfg(not(windows))]
@@ -259,13 +262,19 @@ pub enum Error {
 }
 
 #[cfg(test)]
-#[cfg(not(windows))]
 mod test {
+    #[cfg(not(windows))]
     use crate::locate_system_config_xdg;
+    #[cfg(windows)]
+    use crate::system_config_file;
+    #[cfg(windows)]
+    use uv_static::EnvVars;
+
     use std::env;
     use std::path::Path;
 
     #[test]
+    #[cfg(not(windows))]
     fn test_locate_system_config_xdg() {
         // Construct the path to the uv.toml file in the tests/fixtures directory
         let td = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures");
@@ -303,5 +312,26 @@ mod test {
             .unwrap(),
             first_tf
         );
+    }
+
+    #[cfg(windows)]
+    fn test_windows_config() {
+        // Construct the path to the uv.toml file in the tests/fixtures directory
+        let td = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests\\fixtures");
+        let expected = td.join("ProgramData\\uv\\uv.toml");
+
+        // Previous value of %SYSTEMDRIVE% which should always exist
+        let sd = env::var(EnvVars::SYSTEMDRIVE).unwrap();
+
+        // This is typically only a drive (that is, letter and colon) but we
+        // allow anything, including a path to the test fixtures...
+        env::set_var(EnvVars::SYSTEMDRIVE, td.clone());
+        assert_eq!(system_config_file().unwrap(), expected);
+
+        // This does not have a ProgramData child, so contains no config.
+        env::set_var(EnvVars::SYSTEMDRIVE, td.parent().unwrap());
+        assert_eq!(system_config_file(), None);
+
+        env::set_var(EnvVars::SYSTEMDRIVE, sd);
     }
 }
