@@ -227,7 +227,7 @@ fn system_config_file() -> Option<PathBuf> {
     #[cfg(not(windows))]
     {
         if let Some(path) =
-            locate_system_config_xdg(std::env::var("XDG_CONFIG_DIRS").ok().as_deref())
+            locate_system_config_xdg(std::env::var(EnvVars::XDG_CONFIG_DIRS).ok().as_deref())
         {
             return Some(path);
         }

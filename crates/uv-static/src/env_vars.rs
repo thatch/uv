@@ -211,6 +211,9 @@ impl EnvVars {
     /// Path to directory where executables are installed.
     pub const XDG_BIN_HOME: &'static str = "XDG_BIN_HOME";
 
+    /// Paths to examine for xdg configuration.
+    pub const XDG_CONFIG_DIRS: &'static str = "XDG_CONFIG_DIRS";
+
     /// Timeout (in seconds) for HTTP requests.
     pub const UV_HTTP_TIMEOUT: &'static str = "UV_HTTP_TIMEOUT";
 
